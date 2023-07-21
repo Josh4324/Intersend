@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Header from "../components/Header";
 import { SiEthereum } from "react-icons/si";
 import { BsInfoCircle } from "react-icons/bs";
-import { useAccount, useNetwork, useSwitchNetwork } from "wagmi";
+import { useAccount, useNetwork } from "wagmi";
 import { ethers } from "ethers";
 import sendABI from "../../abis/send.json";
 import { erc20ABI } from "wagmi";
@@ -33,6 +33,16 @@ export default function Home() {
   const walletRef = useRef();
 
   const api = new AxelarQueryAPI({ environment: Environment.TESTNET });
+  const gasNetwork =
+    network === "bsc-testnet"
+      ? "bnb"
+      : network === "maticmum"
+      ? "matic"
+      : network === "avalanche-fuji"
+      ? "avax"
+      : network === "celo-alfajores"
+      ? "celo"
+      : "";
 
   const caddress =
     network === "bsc-testnet"
@@ -90,34 +100,7 @@ export default function Home() {
     setAllowance(amount / 10 ** 6);
   };
 
-  const sendAusdc = async (evt) => {
-    evt.preventDefault();
-    const contract = await createPayContract();
-    if (amountRef.current.value === "") {
-      return toast.error("Please enter aUSDC amount");
-    }
-    if (walletRef.current.value === "") {
-      return toast.error("Please enter recipient wallet address");
-    }
-    if (chainRef.current.value === "") {
-      return toast.error("Please select recipient chain");
-    }
-
-    const amount = ethers.utils.parseUnits(amountRef.current.value, 6);
-    const wallet = [walletRef.current.value];
-    const chainT = chainRef.current.value;
-
-    const caddress =
-      chainT === "Binance"
-        ? bnb_pay
-        : chainT === "Polygon"
-        ? polygon_pay
-        : chainT === "Avalanche"
-        ? avalanche_pay
-        : chainT === "celo-alfajores"
-        ? celo_pay
-        : "";
-
+  const calculateGas = async (chainT) => {
     // Calculate how much gas to pay to Axelar to execute the transaction at the destination chain
     const gasFee = await api.estimateGasFee(
       network === "bsc-testnet"
@@ -152,6 +135,36 @@ export default function Home() {
     );
 
     setGasFee(gasFee);
+  };
+
+  const sendAusdc = async (evt) => {
+    evt.preventDefault();
+    const contract = await createPayContract();
+    if (amountRef.current.value === "") {
+      return toast.error("Please enter aUSDC amount");
+    }
+    if (walletRef.current.value === "") {
+      return toast.error("Please enter recipient wallet address");
+    }
+    if (chainRef.current.value === "") {
+      return toast.error("Please select recipient chain");
+    }
+
+    const amount = ethers.utils.parseUnits(amountRef.current.value, 6);
+    const wallet = [walletRef.current.value];
+    const chainT = chainRef.current.value;
+
+    const caddress =
+      chainT === "Binance"
+        ? bnb_pay
+        : chainT === "Polygon"
+        ? polygon_pay
+        : chainT === "Avalanche"
+        ? avalanche_pay
+        : chainT === "celo-alfajores"
+        ? celo_pay
+        : "";
+
     const id = toast.loading("Transaction in progress..");
 
     try {
@@ -162,7 +175,7 @@ export default function Home() {
         "aUSDC",
         amount,
         {
-          value: gasFee,
+          value: gas,
         }
       );
 
@@ -227,6 +240,7 @@ export default function Home() {
 
   useEffect(() => {
     allowanceCheck();
+    console.log(allowance);
   }, [allowance, network]);
 
   return (
@@ -271,6 +285,7 @@ export default function Home() {
         />
         <select
           ref={chainRef}
+          onChange={() => calculateGas(chainRef.current.value)}
           className="my-2 w-full rounded p-4 outline-none bg-transparent text-white border-none text-sm white-glassmorphism"
         >
           <option>Select Chain</option>
@@ -287,10 +302,11 @@ export default function Home() {
         <input
           placeholder="Amount"
           ref={amountRef}
+          onChange={() => setCurrentAmount(amountRef.current.value)}
           className="my-2 w-full rounded p-4 outline-none bg-transparent text-white border-none text-sm white-glassmorphism"
         />
         <input
-          value={`GasFee - 1000aUSDC`}
+          value={`GasFee - ${gas / 10 ** 18} ${gasNetwork}`}
           className="my-2 w-full rounded p-4 outline-none bg-transparent text-white border-none text-sm white-glassmorphism"
         />
 
