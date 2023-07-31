@@ -94,8 +94,8 @@ export default function Payment() {
                 </button>
             </CopyToClipboard>
 
-            <section style={{ marginTop: "100px" }} className="">
-                <table className="mx-auto w-9/12 text-white px-3">
+            <section style={{ marginTop: "100px", overflowX: "auto" }} className="">
+                <table className="mx-auto w-9/12 text-white px-3 table-auto" >
                     <tbody>
                         <tr className="">
                             <th >Id</th>
