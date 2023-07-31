@@ -29,20 +29,16 @@ export default function Receive() {
   const network = chain?.network;
   const amountRef = useRef();
 
-  console.log(chain_s);
-
   const caddress =
-    chain_s === "bsc-testnet"
+    network === "bsc-testnet"
       ? "0x1c79E559ab894F098881793c0479b5de6d8731c4"
-      : chain_s === "maticmum"
+      : network === "maticmum"
       ? "0xFF8efDf68a5c0E2f5b776416FA8b087dA32808c9"
-      : chain_s === "avalanche-fuji"
+      : network === "avalanche-fuji"
       ? "0x12ce743624ddfe6c138f48896cfd28c397554e28"
-      : chain_s === "celo-alfajores"
+      : network === "celo-alfajores"
       ? "0xaE6eA4945F206C22122E63Dd5387982F23121f36"
       : "";
-
-  console.log(caddress);
 
   const rchain =
     chain_s === "bsc-testnet"
@@ -164,7 +160,16 @@ export default function Receive() {
 
     const id = toast.loading("Transaction in progress..");
 
-    console.log(rchain, caddress, wallet, "aUSDC", my_adr, amount);
+    const caddress =
+      chain_s === "bsc-testnet"
+        ? "0x1c79E559ab894F098881793c0479b5de6d8731c4"
+        : chain_s === "maticmum"
+        ? "0xFF8efDf68a5c0E2f5b776416FA8b087dA32808c9"
+        : chain_s === "avalanche-fuji"
+        ? "0x12ce743624ddfe6c138f48896cfd28c397554e28"
+        : chain_s === "celo-alfajores"
+        ? "0xaE6eA4945F206C22122E63Dd5387982F23121f36"
+        : "";
 
     try {
       const tx = await contract.sendToMany(

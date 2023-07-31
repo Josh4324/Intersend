@@ -1,7 +1,6 @@
 import { Route, Routes, BrowserRouter } from "react-router-dom";
 import "./App.css";
 import Home from "./pages/Home";
-import Test from "./pages/Test";
 import "@rainbow-me/rainbowkit/styles.css";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
@@ -40,7 +39,6 @@ function App() {
             <Route exact path="/" element={<Home />} />
             <Route exact path="/payment" element={<Payment />} />
             <Route exact path="/receive" element={<Receive />} />
-            <Route exact path="/test" element={<Test />} />
           </Routes>
           <ToastContainer autoClose={15000} />
         </BrowserRouter>
