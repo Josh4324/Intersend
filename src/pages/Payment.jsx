@@ -83,7 +83,7 @@ export default function Payment() {
             </div>
 
             <CopyToClipboard
-                text={`http://127.0.0.1:5176/receive?address=${address}&&chain=${chain?.network}`}
+                text={`https://intersend.netlify.app/receive?address=${address}&&chain=${chain?.network}`}
             >
                 <button
                     onClick={() => toast.info("Payment Link copied")}
