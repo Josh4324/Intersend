@@ -2,10 +2,7 @@ import React from "react";
 import { HiMenuAlt4 } from "react-icons/hi";
 import { AiOutlineClose } from "react-icons/ai";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-
-const NavBarItem = ({ title, classprops }) => (
-  <li className={`mx-4 cursor-pointer ${classprops}`}>{title}</li>
-);
+import { Link } from "react-router-dom";
 
 export default function Header() {
   const [toggleMenu, setToggleMenu] = React.useState(false);
@@ -13,12 +10,18 @@ export default function Header() {
   return (
     <nav className="w-full flex md:justify-center justify-between items-center p-4">
       <div className="md:flex-[0.5] flex-initial justify-center items-center">
-        <div className="w-32 cursor-pointer">Intersend</div>
+        <Link to="/">
+          <div className="w-32 text-lg cursor-pointer">Intersend</div>
+        </Link>
       </div>
       <ul className="text-white md:flex hidden list-none flex-row justify-between items-center flex-initial">
-        {["Send", "Request", "Payment Link"].map((item, index) => (
-          <NavBarItem key={item + index} title={item} />
-        ))}
+        <Link to="/">
+          <li className={`mx-4 cursor-pointer my-2 text-lg`}>Send</li>
+        </Link>
+        <li className={`mx-4 cursor-pointer my-2 text-lg`}>Request</li>
+        <Link to="/payment">
+          <li className={`mx-4 cursor-pointer my-2 text-lg`}>Payment Link</li>
+        </Link>
         <ConnectButton />
       </ul>
       <div className="flex relative">
@@ -44,13 +47,18 @@ export default function Header() {
             <li className="text-xl w-full my-2">
               <AiOutlineClose onClick={() => setToggleMenu(false)} />
             </li>
-            {["Send", "Request", "Payment Link"].map((item, index) => (
-              <NavBarItem
-                key={item + index}
-                title={item}
-                classprops="my-2 text-lg"
-              />
-            ))}
+
+            <Link to="/">
+              <li className={`mx-4 cursor-pointer my-2 text-lg`}>Send</li>
+            </Link>
+
+            <li className={`mx-4 cursor-pointer my-2 text-lg`}>Request</li>
+            <Link to="/payment">
+              <li className={`mx-4 cursor-pointer my-2 text-lg`}>
+                Payment Link
+              </li>
+            </Link>
+
             <ConnectButton />
           </ul>
         )}

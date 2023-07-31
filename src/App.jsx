@@ -14,6 +14,8 @@ import {
   bscTestnet,
 } from "wagmi/chains";
 import { publicProvider } from "wagmi/providers/public";
+import Payment from "./pages/Payment";
+import Receive from "./pages/Receive";
 
 function App() {
   const { chains, publicClient } = configureChains(
@@ -36,6 +38,8 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route exact path="/" element={<Home />} />
+            <Route exact path="/payment" element={<Payment />} />
+            <Route exact path="/receive" element={<Receive />} />
             <Route exact path="/test" element={<Test />} />
           </Routes>
           <ToastContainer autoClose={15000} />

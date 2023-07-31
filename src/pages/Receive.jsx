@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import Header from "../components/Header";
-import { SiEthereum } from "react-icons/si";
-import { BsInfoCircle } from "react-icons/bs";
 import { useAccount, useNetwork } from "wagmi";
 import { ethers } from "ethers";
-import sendABI from "../../abis/send.json";
+import receiveABI from "../../abis/receive.json";
 import { erc20ABI } from "wagmi";
+import { useSearchParams } from "react-router-dom";
 import {
   AxelarQueryAPI,
   Environment,
@@ -13,10 +12,6 @@ import {
   GasToken,
 } from "@axelar-network/axelarjs-sdk";
 import {
-  bnb_pay,
-  polygon_pay,
-  avalanche_pay,
-  celo_pay,
   bnb_ausdc,
   polygon_ausdc,
   avalanche_ausdc,
@@ -24,13 +19,41 @@ import {
 } from "../../utils/constant";
 import { toast } from "react-toastify";
 
-export default function Home() {
+export default function Receive() {
+  let [search] = useSearchParams();
+  const { address: my_adr } = useAccount();
+  const address = search.get("address");
+  const chain_s = search.get("chain");
   const { chain } = useNetwork();
-  const { address } = useAccount();
+
   const network = chain?.network;
   const amountRef = useRef();
-  const chainRef = useRef();
-  const walletRef = useRef();
+
+  console.log(chain_s);
+
+  const caddress =
+    chain_s === "bsc-testnet"
+      ? "0x1c79E559ab894F098881793c0479b5de6d8731c4"
+      : chain_s === "maticmum"
+      ? "0xFF8efDf68a5c0E2f5b776416FA8b087dA32808c9"
+      : chain_s === "avalanche-fuji"
+      ? "0x12ce743624ddfe6c138f48896cfd28c397554e28"
+      : chain_s === "celo-alfajores"
+      ? "0xaE6eA4945F206C22122E63Dd5387982F23121f36"
+      : "";
+
+  console.log(caddress);
+
+  const rchain =
+    chain_s === "bsc-testnet"
+      ? "Binance"
+      : chain_s === "maticmum"
+      ? "Polygon"
+      : chain_s === "avalanche-fuji"
+      ? "Avalanche"
+      : chain_s === "celo-alfajores"
+      ? "Celo"
+      : "";
 
   const api = new AxelarQueryAPI({ environment: Environment.TESTNET });
   const gasNetwork =
@@ -44,29 +67,18 @@ export default function Home() {
       ? "celo"
       : "";
 
-  const caddress =
-    network === "bsc-testnet"
-      ? bnb_pay
-      : network === "maticmum"
-      ? polygon_pay
-      : network === "avalanche-fuji"
-      ? avalanche_pay
-      : network === "celo-alfajores"
-      ? celo_pay
-      : "";
-
   const [allowance, setAllowance] = useState(0);
   const [balance, setBalance] = useState(0);
   const [currentAmount, setCurrentAmount] = useState(0);
   const [gas, setGasFee] = useState(0);
 
-  const createPayContract = async () => {
+  const createReceiveContract = async () => {
     const { ethereum } = window;
     const provider = new ethers.providers.Web3Provider(ethereum);
     const signer = provider.getSigner();
 
-    const payContract = new ethers.Contract(caddress, sendABI, signer);
-    return payContract;
+    const receiveContract = new ethers.Contract(caddress, receiveABI, signer);
+    return receiveContract;
   };
 
   const createUSDContract = async () => {
@@ -85,6 +97,8 @@ export default function Home() {
         ? celo_ausdc
         : "";
 
+    console.log(caddress_ausdc);
+
     const usdcContract = new ethers.Contract(caddress_ausdc, erc20ABI, signer);
     return usdcContract;
   };
@@ -92,7 +106,7 @@ export default function Home() {
   const allowanceCheck = async () => {
     const contract = await createUSDContract();
     if (caddress === "") {
-      return toast.error("Please connect to a supported chain");
+      return toast.error("Please connect to a supported chain - here");
     }
     const amount = await contract.allowance(address, caddress);
     const balance = await contract.balanceOf(address);
@@ -139,40 +153,26 @@ export default function Home() {
 
   const sendAusdc = async (evt) => {
     evt.preventDefault();
-    const contract = await createPayContract();
+    const contract = await createReceiveContract();
     if (amountRef.current.value === "") {
       return toast.error("Please enter aUSDC amount");
     }
-    if (walletRef.current.value === "") {
-      return toast.error("Please enter recipient wallet address");
-    }
-    if (chainRef.current.value === "") {
-      return toast.error("Please select recipient chain");
-    }
 
     const amount = ethers.utils.parseUnits(amountRef.current.value, 6);
-    const wallet = [walletRef.current.value];
-    const chainT = chainRef.current.value;
-
-    const caddress =
-      chainT === "Binance"
-        ? bnb_pay
-        : chainT === "Polygon"
-        ? polygon_pay
-        : chainT === "Avalanche"
-        ? avalanche_pay
-        : chainT === "celo-alfajores"
-        ? celo_pay
-        : "";
+    const wallet = [address];
+    console.log(wallet);
 
     const id = toast.loading("Transaction in progress..");
 
+    console.log(rchain, caddress, wallet, "aUSDC", my_adr, amount);
+
     try {
       const tx = await contract.sendToMany(
-        chainT,
+        rchain,
         caddress,
         wallet,
         "aUSDC",
+        my_adr,
         amount,
         {
           value: gas,
@@ -181,8 +181,6 @@ export default function Home() {
 
       await tx.wait();
       amountRef.current.value = "";
-      walletRef.current.value = "";
-      chainRef.current.value = "Select Chain";
       setGasFee(0);
       allowanceCheck();
 
@@ -240,66 +238,40 @@ export default function Home() {
 
   useEffect(() => {
     allowanceCheck();
+    calculateGas(rchain);
   }, [allowance, network]);
 
   return (
     <div>
       <Header />
 
-      <div className="flex flex-col lg:flex-row w-full justify-between mt-10 lg:mt-32 mx-auto sm:w-2/3">
-        <div>
-          <h1 className="text-4xl sm:text-5xl mt-10 text-white text-gradient py-1 text-center lg:text-left">
-            <div className="pb-5">Send Crypto</div> <div>Across Chains</div>
-          </h1>
-        </div>
-        <div className="flex">
-          <div className="p-3 flex mx-auto justify-end items-start flex-col rounded-xl h-40 sm:w-72 w-9/12 my-5 eth-card .white-glassmorphism ">
-            <div className="flex justify-between flex-col w-full h-full">
-              <div className="flex justify-between items-start">
-                <div className="w-10 h-10 rounded-full border-2 border-white flex justify-center items-center">
-                  <SiEthereum fontSize={21} color="#fff" />
-                </div>
-                <BsInfoCircle fontSize={17} color="#fff" />
-              </div>
-              <div>
-                <p className="text-white font-light text-sm">
-                  {address?.slice(0, 8)}...{address?.slice(address?.length - 6)}
-                </p>
-                <p className="text-white font-semibold text-lg mt-1">
-                  {chain?.name}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="p-10  sm:w-9/12 lg:w-5/12 w-full mx-auto mt-20 mb-10 flex flex-col justify-start items-center blue-glassmorphism">
-        <select className="my-2 w-full rounded p-4 outline-none bg-transparent text-white border-none text-sm white-glassmorphism">
-          <option>aUSDC</option>
-        </select>
+        <div className="text4"> You can pay aUSDC from any chain below</div>
+        <div className="text41"> Binance || Polygon || Celo || Avalanche</div>
+
         <input
-          value={`Balance - ${balance} aUSDC`}
-          className="my-2 w-full rounded p-4 outline-none bg-transparent text-white border-none text-sm white-glassmorphism"
-        />
-        <select
-          ref={chainRef}
-          onChange={() => calculateGas(chainRef.current.value)}
-          className="my-2 w-full rounded p-4 outline-none bg-transparent text-white border-none text-sm white-glassmorphism"
-        >
-          <option>Select Chain</option>
-          <option> Polygon </option>
-          <option>Avalanche</option>
-          <option>Binance</option>
-          <option>Celo</option>
-        </select>
-        <input
-          placeholder="Address To"
-          ref={walletRef}
+          value={`My Balance - ${balance}`}
           className="my-2 w-full rounded p-4 outline-none bg-transparent text-white border-none text-sm white-glassmorphism"
         />
         <input
-          placeholder="Amount"
+          className="my-2 w-full rounded p-4 outline-none bg-transparent text-white border-none text-sm white-glassmorphism"
+          value={`Recipient Address -  ${address}`}
+        />
+        <input
+          className="my-2 w-full rounded p-4 outline-none bg-transparent text-white border-none text-sm white-glassmorphism"
+          value={
+            chain_s === "bsc-testnet"
+              ? "Recipient Chain - Binance"
+              : chain_s === "maticmum"
+              ? "Recipient Chain - Polygon"
+              : chain_s === "avalanche-fuji"
+              ? "Recipient Chain - Avalanche"
+              : ""
+          }
+        />
+
+        <input
+          placeholder="Enter Amount"
           ref={amountRef}
           onChange={() => setCurrentAmount(amountRef.current.value)}
           className="my-2 w-full rounded p-4 outline-none bg-transparent text-white border-none text-sm white-glassmorphism"
