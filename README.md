@@ -5,6 +5,7 @@ InterSend is a decentralized application (dapp) that enables users to transfer a
 ## Project Details
 
 Link to Project - https://intersend.netlify.app/
+Link to Contract Code - https://github.com/Josh4324/intersend-contracts
 
 ### Smart Contracts
 
